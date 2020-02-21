@@ -13,6 +13,10 @@ import os
 from fontTools.ttLib import TTFont
 import requests
 
+"""
+登录glidedSky,获取session
+"""
+
 
 def login(user_email: str, user_password: str):
     global session
@@ -48,9 +52,15 @@ def login(user_email: str, user_password: str):
     post_data(user_email, user_password)
 
 
+"""
+获取当前页的源码当中的数字以及字体文件
+"""
+
+
 def get_page(page: int):
     from parsel import Selector
     import base64
+
     html = session.get(f'http://glidedsky.com/level/web/crawler-font-puzzle-1?page'
                        f'={page}').text
     select = Selector(text=html)
@@ -66,6 +76,11 @@ def get_page(page: int):
     return nums
 
 
+"""
+保存字体文件为xml形式
+"""
+
+
 def save_font_family_xml(page: int):
     font_xml_name = f'glided_sky{page}.xml'
     font_path_name = f'glided_sky{page}.ttf'
@@ -73,16 +88,24 @@ def save_font_family_xml(page: int):
     font.saveXML(font_xml_name)
 
 
+"""
+解析生成的xml文件
+"""
+
+
 def parse_for_xml(file_path: str, nums: list) -> list:
     from xml.dom.minidom import parse
+
     dom_tree = parse(file_path)
     root = dom_tree.documentElement
     mapping_num_dict = {}
     all_children = root.getElementsByTagName('GlyphID')
+    # 字体文件当中，0对应的那一行对应的name不为数字，且10不存在，我们把0后面的name依次往前替换上一个的
+    # name,比如0对应的那行的name的下一个name为one则0对应one
     for index, child in enumerate(all_children):
         if index == len(all_children) - 1:
             break
-        mapping_num_dict.setdefault(str(index), all_children[index+1].getAttribute(
+        mapping_num_dict.setdefault(str(index), all_children[index + 1].getAttribute(
             'name'))
     # 循环后值对应的键即为相应的显示的值
     for idx, value in enumerate(mapping_num_dict.values()):
@@ -96,6 +119,11 @@ def parse_for_xml(file_path: str, nums: list) -> list:
             real_num += mapping_num_dict[i]
         nums[idx] = int(real_num)
     return nums
+
+
+"""
+真实的映射字典
+"""
 
 
 def mapping_num() -> dict:
@@ -114,6 +142,11 @@ def mapping_num() -> dict:
     return dict_num
 
 
+"""
+删除本次循环产生的文件
+"""
+
+
 def remove_font_file(file_name: str):
     file_path = os.getcwd() + r'\\' + file_name
     if os.path.exists(file_path):
@@ -121,7 +154,7 @@ def remove_font_file(file_name: str):
 
 
 if __name__ == '__main__':
-    login('', '')
+    login('huangsheng6668@163.com', 'a582251000')
     answer = 0
     for page in range(1, 1001):
         nums = get_page(page)
@@ -130,7 +163,7 @@ if __name__ == '__main__':
         num_list = parse_for_xml(os.getcwd() + font_xml_name, nums)
         for num in num_list:
             answer += num
-        print('第', str(page), '页:'+str(answer))
+        print('第', str(page), '页:' + str(answer))
         add_file_paths = [font_xml_name, font_path_name]
-        for i in add_file_paths:
-            remove_font_file(i)
+        # map外面如果不加list，map返回的是一个map类，并没有执行里面的函数
+        list(map(remove_font_file, add_file_paths))
