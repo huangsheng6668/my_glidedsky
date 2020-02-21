@@ -154,7 +154,7 @@ def remove_font_file(file_name: str):
 
 
 if __name__ == '__main__':
-    login('huangsheng6668@163.com', 'a582251000')
+    login('', '')
     answer = 0
     for page in range(1, 1001):
         nums = get_page(page)
